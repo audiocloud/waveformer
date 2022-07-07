@@ -1,6 +1,6 @@
 {
   "name": "waveformer",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Waveform generator and uploader",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,8 @@
     "ioredis": "^5",
     "wildcard-match": "^5",
     "body-parser": "^1",
-    "cors": "^2"
+    "cors": "^2",
+    "nanoid": "^4",
+    "serialize-error": "^11"
   }
 }
