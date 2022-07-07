@@ -1,0 +1,30 @@
+{
+  "name": "waveformer",
+  "version": "1.0.0",
+  "description": "Waveform generator and uploader",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/audiocloud/waveformer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/audiocloud/waveformer/issues"
+  },
+  "homepage": "https://github.com/audiocloud/waveformer#readme",
+  "dependencies": {
+    "bullmq": "^1",
+    "express": "^4",
+    "tempy": "^3",
+    "axios": "^0.27",
+    "ioredis": "^5",
+    "wildcard-match": "^5",
+    "body-parser": "^1",
+    "cors": "^2"
+  }
+}
