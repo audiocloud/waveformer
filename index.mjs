@@ -2,8 +2,6 @@ import { Worker, Queue } from "bullmq";
 import { temporaryFileTask } from "tempy";
 import { nanoid } from "nanoid";
 import { serializeError } from "serialize-error";
-import ffprobe from 'ffprobe'
-import ffprobeStatic from 'ffprobe-static'
 import Axios from "axios";
 import wmatch from "wildcard-match";
 import body_parser from "body-parser";
@@ -13,6 +11,8 @@ import child from "child_process";
 import fs from "fs";
 import Express from "express";
 import process from "process";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 const app = Express();
 const axios = Axios;
@@ -37,26 +37,49 @@ const worker = new Worker(
       output_format,
       channel_mode,
       notify_url,
-      bit_depth,
+      awf_bit_depth,
       context,
     } = job.data;
+
+    const meta = {}
 
     await temporaryFileTask(
       async (input_loc) => {
         await temporaryFileTask(
           async (output_loc) => {
             await download(input_url, input_loc);
+            
+            console.log('----- download finished -----')
+            const {
+              codec_name,
+              format_name,
+              sample_rate,
+              bit_depth,
+              channels,
+              duration,
+              duration_in_samples,
+              time_base,
+            } = await get_metadata(input_loc);
+
+            meta.codec_name = codec_name;
+            meta.format_name = format_name;
+            meta.sample_rate = sample_rate;
+            meta.bit_depth = bit_depth;
+            meta.channels = channels;
+            meta.duration = duration;
+            meta.duration_in_samples = duration_in_samples;
+            meta.time_base = time_base;
+
+            console.log('----- meta set -----')
+
             await generate_peaks(
               input_loc,
               input_format,
               channel_mode,
               output_format,
-              bit_depth,
+              awf_bit_depth,
               output_loc
             );
-
-            // get fileMeta into context
-            context.fileMeta = await get_metadata(input_loc)
 
             await upload(output_loc, output_url);
           },
@@ -66,7 +89,7 @@ const worker = new Worker(
       { extension: input_format }
     );
 
-    await notify(notify_url, job.id, context, null);
+    await notify(notify_url, job.id, context, meta, null);
   },
   { concurrency: parseInt(process.env.CONCURRENCY || "10"), connection }
 );
@@ -163,41 +186,59 @@ function generate_peaks(
 async function get_metadata (input_loc) {
   console.log("getting file metadata");
 
-  const ffprobeResult = ffprobe(input_loc, { path: ffprobeStatic.path })
-    .then(function(info) {
-      console.log(info);
+  const promisifyExec = promisify(exec)
 
-      // Requiring stream 0 to be an audio stream
-      if (info.streams[0].codec_type === 'audio') {
+  const { stdout, stderr } = await promisifyExec(`ffprobe -print_format json -show_format -show_streams -select_streams a -i ${input_loc}`);
+  
+  console.log('--------------------------------------------')
+  // console.log('stdout:', stdout);
+  // console.error('stderr:', stderr);
+  
+  console.log('--------------------------------------------')
+  const full_meta = JSON.parse(stdout)
+  
+  console.log('full_meta:', full_meta)
+  console.log('full_meta.streams.length:', full_meta.streams.length)
+  
+  console.log('--------------------------------------------')
+  // reject if audio streams 0
+  
+  if (full_meta.streams.length < 1) {
+    throw Error('No audio streams found.')
 
-        return {
-          codecName: info.streams[0].codec_name,
-          codecTagString: info.streams[0].codec_tag_string,
-          sampleRate: info.streams[0].sample_rate,
-          channels: info.streams[0].channels,
-          bitDepth: info.streams[0].bits_per_sample,
-          length: info.streams[0].duration,
-          container: info.streams[0].container
-        }
+  } else {
 
-      } else {
-        throw Error('Stream 0 is not an audio stream.')
-      }
-    })
-    .catch(function (err) {
-      console.error(err);
-    })
+    const meta = {
+      codec_name:           full_meta.streams[0].codec_name,
+      format_name:          full_meta.format.format_name,
+      sample_rate:          parseInt(full_meta.streams[0].sample_rate),
+      bit_depth:            full_meta.streams[0].bits_per_sample,
+      channels:             full_meta.streams[0].channels,
+      duration:             parseFloat(full_meta.streams[0].duration),
+      time_base:            full_meta.streams[0].time_base
+    }
 
-  return ffprobeResult
+    meta.duration_in_samples = Number(BigInt(full_meta.streams[0].duration_ts) * BigInt(meta.sample_rate) / BigInt(meta.time_base.split('/').pop()))
+
+    const allowedFormatNames = ['flac', 'wav', 'mp3']
+    const allowedCodecNames = ['flac', 'pcm_s16le', 'pcm_s16be', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'mp3']
+
+    if (meta.channels > 2) throw Error('More than 2 channels not allowed.')
+    if (!allowedFormatNames.find(element => element === meta.format_name)) throw Error(`Bad format: ${meta.format_name}`)
+    if (!allowedCodecNames.find(element => element === meta.codec_name)) throw Error(`Bad codec: ${meta.codec_name}`)
+
+    return meta
+  }
 }
 
-async function notify(url, id, context, err) {
+async function notify(url, id, context, meta, err) {
   console.log("notifying");
   console.table({ url, id, context, err });
 
   await axios.post(url, {
     err: err ? serializeError(err) : null,
     context,
+    meta,
     id,
   });
 }
@@ -220,7 +261,7 @@ app.post("/v1/create", (req, res, next) => {
     output_format,
     output_url,
     channel_mode,
-    bit_depth,
+    bit_depth: awf_bit_depth,
     notify_url,
     context,
   } = req.body;
@@ -252,7 +293,7 @@ app.post("/v1/create", (req, res, next) => {
     throw new Error("Channel mode is not valid");
   }
 
-  if (bit_depth !== 8 && bit_depth !== 16) {
+  if (awf_bit_depth !== 8 && awf_bit_depth !== 16) {
     throw new Error("Bit depth is not valid");
   }
 
@@ -264,7 +305,7 @@ app.post("/v1/create", (req, res, next) => {
         input_format,
         output_format,
         channel_mode,
-        bit_depth,
+        awf_bit_depth,
         output_url,
         notify_url,
         context,

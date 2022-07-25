@@ -99,7 +99,7 @@ RUN apk add --no-cache boost-dev boost-static cmake g++ gcc gd-dev git libgd lib
 
 FROM node:current-alpine
 
-RUN apk add --no-cache libstdc++
+RUN apk add --no-cache libstdc++ ffmpeg
 
 COPY --from=builder /usr/local/bin/audiowaveform /usr/local/bin/audiowaveform
 
