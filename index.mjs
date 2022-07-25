@@ -2,6 +2,8 @@ import { Worker, Queue } from "bullmq";
 import { temporaryFileTask } from "tempy";
 import { nanoid } from "nanoid";
 import { serializeError } from "serialize-error";
+import ffprobe from 'ffprobe'
+import ffprobeStatic from 'ffprobe-static'
 import Axios from "axios";
 import wmatch from "wildcard-match";
 import body_parser from "body-parser";
@@ -38,6 +40,7 @@ const worker = new Worker(
       bit_depth,
       context,
     } = job.data;
+
     await temporaryFileTask(
       async (input_loc) => {
         await temporaryFileTask(
@@ -51,6 +54,10 @@ const worker = new Worker(
               bit_depth,
               output_loc
             );
+
+            // get fileMeta into context
+            context.fileMeta = await get_metadata(input_loc)
+
             await upload(output_loc, output_url);
           },
           { extension: output_format }
@@ -151,6 +158,37 @@ function generate_peaks(
     });
     awf.on("error", reject);
   });
+}
+
+async function get_metadata (input_loc) {
+  console.log("getting file metadata");
+
+  const ffprobeResult = ffprobe(input_loc, { path: ffprobeStatic.path })
+    .then(function(info) {
+      console.log(info);
+
+      // Requiring stream 0 to be an audio stream
+      if (info.streams[0].codec_type === 'audio') {
+
+        return {
+          codecName: info.streams[0].codec_name,
+          codecTagString: info.streams[0].codec_tag_string,
+          sampleRate: info.streams[0].sample_rate,
+          channels: info.streams[0].channels,
+          bitDepth: info.streams[0].bits_per_sample,
+          length: info.streams[0].duration,
+          container: info.streams[0].container
+        }
+
+      } else {
+        throw Error('Stream 0 is not an audio stream.')
+      }
+    })
+    .catch(function (err) {
+      console.error(err);
+    })
+
+  return ffprobeResult
 }
 
 async function notify(url, id, context, err) {

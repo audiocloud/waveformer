@@ -18,15 +18,16 @@
   },
   "homepage": "https://github.com/audiocloud/waveformer#readme",
   "dependencies": {
-    "bullmq": "^1",
-    "express": "^4",
-    "tempy": "^3",
     "axios": "^0.27",
-    "ioredis": "^5",
-    "wildcard-match": "^5",
     "body-parser": "^1",
+    "bullmq": "^1",
     "cors": "^2",
+    "express": "^4",
+    "ffprobe": "^1.1.2",
+    "ioredis": "^5",
     "nanoid": "^4",
-    "serialize-error": "^11"
+    "serialize-error": "^11",
+    "tempy": "^3",
+    "wildcard-match": "^5"
   }
 }
