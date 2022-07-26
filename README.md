@@ -1,2 +1,2 @@
 # waveformer
-Waveform generator and uploader
+Waveform generator and audio metadata extractor with webhooks.
