@@ -51,24 +51,24 @@ const worker = new Worker(
             
             console.log('----- download finished -----')
             const {
-              codec_name,
-              format_name,
               sample_rate,
-              bit_depth,
               channels,
+              bit_depth,
               duration,
               duration_in_samples,
               time_base,
+              format_name,
+              codec_name
             } = await get_metadata(input_loc);
 
-            meta.codec_name = codec_name;
-            meta.format_name = format_name;
             meta.sample_rate = sample_rate;
-            meta.bit_depth = bit_depth;
             meta.channels = channels;
+            meta.bit_depth = bit_depth;
             meta.duration = duration;
             meta.duration_in_samples = duration_in_samples;
             meta.time_base = time_base;
+            meta.format_name = format_name;
+            meta.codec_name = codec_name;
 
             console.log('----- meta set -----')
 
@@ -191,34 +191,28 @@ async function get_metadata (input_loc) {
   const { stdout, stderr } = await promisifyExec(`ffprobe -print_format json -show_format -show_streams -select_streams a -i ${input_loc}`);
   
   console.log('--------------------------------------------')
-  // console.log('stdout:', stdout);
-  // console.error('stderr:', stderr);
-  
-  console.log('--------------------------------------------')
-  const full_meta = JSON.parse(stdout)
-  
-  console.log('full_meta:', full_meta)
-  console.log('full_meta.streams.length:', full_meta.streams.length)
-  
-  console.log('--------------------------------------------')
-  // reject if audio streams 0
-  
-  if (full_meta.streams.length < 1) {
+  const ffprobe_result = JSON.parse(stdout)
+  // console.log('ffprobe_result:', ffprobe_result)
+  // console.log('--------------------------------------------')
+
+  if (ffprobe_result.streams.length < 1) {
     throw Error('No audio streams found.')
 
   } else {
 
     const meta = {
-      codec_name:           full_meta.streams[0].codec_name,
-      format_name:          full_meta.format.format_name,
-      sample_rate:          parseInt(full_meta.streams[0].sample_rate),
-      bit_depth:            full_meta.streams[0].bits_per_sample,
-      channels:             full_meta.streams[0].channels,
-      duration:             parseFloat(full_meta.streams[0].duration),
-      time_base:            full_meta.streams[0].time_base
+      sample_rate:          parseInt(ffprobe_result.streams[0].sample_rate),
+      channels:             ffprobe_result.streams[0].channels,
+      duration:             parseFloat(ffprobe_result.streams[0].duration),
+      time_base:            ffprobe_result.streams[0].time_base,
+      format_name:          ffprobe_result.format.format_name,
+      codec_name:           ffprobe_result.streams[0].codec_name
     }
+    
+    if (ffprobe_result.streams[0].bits_per_sample === 0) meta.bit_depth = null
+    else meta.bit_depth = ffprobe_result.streams[0].bits_per_sample
 
-    meta.duration_in_samples = Number(BigInt(full_meta.streams[0].duration_ts) * BigInt(meta.sample_rate) / BigInt(meta.time_base.split('/').pop()))
+    meta.duration_in_samples = Number(BigInt(ffprobe_result.streams[0].duration_ts) * BigInt(meta.sample_rate) / BigInt(meta.time_base.split('/').pop()))
 
     const allowedFormatNames = ['flac', 'wav', 'mp3']
     const allowedCodecNames = ['flac', 'pcm_s16le', 'pcm_s16be', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'mp3']
@@ -226,6 +220,8 @@ async function get_metadata (input_loc) {
     if (meta.channels > 2) throw Error('More than 2 channels not allowed.')
     if (!allowedFormatNames.find(element => element === meta.format_name)) throw Error(`Bad format: ${meta.format_name}`)
     if (!allowedCodecNames.find(element => element === meta.codec_name)) throw Error(`Bad codec: ${meta.codec_name}`)
+
+    console.log('meta:', meta)
 
     return meta
   }
