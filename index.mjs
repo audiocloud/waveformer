@@ -1,4 +1,4 @@
-import { Worker, Queue } from "bullmq";
+import { Agenda } from "agenda";
 import { temporaryFileTask } from "tempy";
 import { nanoid } from "nanoid";
 import { serializeError } from "serialize-error";
@@ -6,7 +6,6 @@ import Axios from "axios";
 import wmatch from "wildcard-match";
 import body_parser from "body-parser";
 import cors from "cors";
-import Redis from "ioredis";
 import child from "child_process";
 import fs from "fs";
 import Express from "express";
@@ -16,92 +15,104 @@ import { promisify } from "util";
 
 const app = Express();
 const axios = Axios;
-const job_name = "waveform";
 const port = process.env.PORT || 3000;
-const connection = new Redis(process.env.REDIS_URL, {
-  maxRetriesPerRequest: null,
+
+if (process.env.MONGO_CONNECTION_STRING === undefined) throw Error('MongoDB connection string missing.')
+const agenda = new Agenda({ db: { address: process.env.MONGO_CONNECTION_STRING } });
+
+agenda.on('start', (job) => {
+  console.log(`Starting job ${job.attrs.name} id: ${job.attrs.data.job_id}`)
+})
+
+agenda.on('complete', (job) => {
+  console.log(`Completed job ${job.attrs.name} id: ${job.attrs.data.job_id}`)
+})
+
+agenda.on('fail', (job) => {
+  console.log(`Failed job ${job.attrs.name} id: ${job.attrs.data.job_id}`)
+})
+
+agenda.on('error', (error) => {
+  throw Error(error)
+})
+
+agenda.define("waveform", async (job) => {
+  console.log("Waveforming...");
+  console.log({ ...job.attrs.data, id: job.attrs.data.job_id });
+
+  const {
+    job_id,
+    input_url,
+    input_format,
+    output_url,
+    output_format,
+    channel_mode,
+    notify_url,
+    awf_bit_depth,
+    context,
+  } = job.attrs.data;
+
+  const meta = {}
+
+  await temporaryFileTask(
+    async (input_loc) => {
+      await temporaryFileTask(
+        async (output_loc) => {
+          await download(input_url, input_loc);
+          
+          console.log('----- download finished -----')
+          const {
+            sample_rate,
+            channels,
+            bit_depth,
+            duration,
+            duration_in_samples,
+            time_base,
+            format_name,
+            codec_name
+          } = await get_metadata(input_loc);
+
+          meta.sample_rate = sample_rate;
+          meta.channels = channels;
+          meta.bit_depth = bit_depth;
+          meta.duration = duration;
+          meta.duration_in_samples = duration_in_samples;
+          meta.time_base = time_base;
+          meta.format_name = format_name;
+          meta.codec_name = codec_name;
+
+          console.log('----- meta set -----')
+
+          await generate_peaks(
+            input_loc,
+            input_format,
+            channel_mode,
+            output_format,
+            awf_bit_depth,
+            output_loc
+          );
+
+          await upload(output_loc, output_url);
+        },
+        { extension: output_format }
+      );
+    },
+    { extension: input_format }
+  );
+
+  await notify(notify_url, job_id, context, meta, null);
 });
 
-const queue = new Queue(job_name, { connection });
+// start agenda
 
-const worker = new Worker(
-  job_name,
-  async (job) => {
-    console.log("processing job");
-    console.table({ ...job.data, id: job.id });
-
-    const {
-      input_url,
-      input_format,
-      output_url,
-      output_format,
-      channel_mode,
-      notify_url,
-      awf_bit_depth,
-      context,
-    } = job.data;
-
-    const meta = {}
-
-    await temporaryFileTask(
-      async (input_loc) => {
-        await temporaryFileTask(
-          async (output_loc) => {
-            await download(input_url, input_loc);
-            
-            console.log('----- download finished -----')
-            const {
-              sample_rate,
-              channels,
-              bit_depth,
-              duration,
-              duration_in_samples,
-              time_base,
-              format_name,
-              codec_name
-            } = await get_metadata(input_loc);
-
-            meta.sample_rate = sample_rate;
-            meta.channels = channels;
-            meta.bit_depth = bit_depth;
-            meta.duration = duration;
-            meta.duration_in_samples = duration_in_samples;
-            meta.time_base = time_base;
-            meta.format_name = format_name;
-            meta.codec_name = codec_name;
-
-            console.log('----- meta set -----')
-
-            await generate_peaks(
-              input_loc,
-              input_format,
-              channel_mode,
-              output_format,
-              awf_bit_depth,
-              output_loc
-            );
-
-            await upload(output_loc, output_url);
-          },
-          { extension: output_format }
-        );
-      },
-      { extension: input_format }
-    );
-
-    await notify(notify_url, job.id, context, meta, null);
-  },
-  { concurrency: parseInt(process.env.CONCURRENCY || "10"), connection }
-);
-
-worker.on("failed", (job, error) => {
-  console.log({ job, error });
-  notify(job.data.notify_url, job.id, job.data.context, error).catch(() => {});
-});
+(async function () {
+  // IIFE to give access to async/await
+  await agenda.start();
+})();
 
 async function upload(path, url) {
   console.log("uploading");
-  console.table({ path, url });
+  console.log({ path, url });
   await axios({
     url,
     method: "put",
@@ -112,7 +123,7 @@ async function upload(path, url) {
 
 async function download(url, path) {
   console.log("downloading");
-  console.table({ url, path });
+  console.log({ url, path });
 
   const source = await axios.get(url, { responseType: "stream" });
   const writer = fs.createWriteStream(path);
@@ -229,7 +240,7 @@ async function get_metadata (input_loc) {
 
 async function notify(url, id, context, meta, err) {
   console.log("notifying");
-  console.table({ url, id, context, err });
+  console.log({ url, id, context, err });
 
   await axios.post(url, {
     err: err ? serializeError(err) : null,
@@ -241,7 +252,8 @@ async function notify(url, id, context, meta, err) {
 
 const is_domain_valid = wmatch(
   (process.env.VALID_URL_DOMAINS || "*").split(",")
-);
+)
+
 function is_url_valid(url) {
   const parsed = new URL(url);
   return is_domain_valid(parsed.host);
@@ -293,23 +305,23 @@ app.post("/v1/create", (req, res, next) => {
     throw new Error("Bit depth is not valid");
   }
 
-  queue
-    .add(
-      new Date().toISOString(),
-      {
-        input_url,
-        input_format,
-        output_format,
-        channel_mode,
-        awf_bit_depth,
-        output_url,
-        notify_url,
-        context,
-      },
-      { jobId: nanoid() }
-    )
-    .then((job) => res.json(job.id))
-    .catch(next);
+  agenda.schedule(
+    new Date().toISOString(),
+    'waveform',
+    {
+      job_id: nanoid(),
+      input_url,
+      input_format,
+      output_format,
+      channel_mode,
+      awf_bit_depth,
+      output_url,
+      notify_url,
+      context,
+    }
+  ).then(jobs => res.json(jobs)) // probably sends too much (all jobs), solve this by creating a job id if agenda doesnt provide one
+  .catch(next);
+
 });
 
 app.listen(port, () => {
