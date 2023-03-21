@@ -319,8 +319,11 @@ app.post("/v1/create", (req, res, next) => {
       notify_url,
       context,
     }
-  ).then(jobs => res.json(jobs)) // probably sends too much (all jobs), solve this by creating a job id if agenda doesnt provide one
-  .catch(next);
+  ).then(job => res.status(200).json({
+      success: true,
+      job: job
+    })
+  ).catch(next);
 
 });
 
