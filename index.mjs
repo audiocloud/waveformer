@@ -199,7 +199,7 @@ async function get_metadata (input_loc) {
 
   const promisifyExec = promisify(exec)
 
-  const { stdout, stderr } = await promisifyExec(`ffprobe -print_format json -show_format -show_streams -select_streams a -i ${input_loc}`);
+  const { stdout, stderr } = await promisifyExec(`ffprobe -print_format json -show_format -show_streams -select_streams a -i ${input_loc} -show_entries format=size`);
   
   console.log('--------------------------------------------')
   const ffprobe_result = JSON.parse(stdout)
@@ -217,7 +217,8 @@ async function get_metadata (input_loc) {
       duration:             parseFloat(ffprobe_result.streams[0].duration),
       time_base:            ffprobe_result.streams[0].time_base,
       format_name:          ffprobe_result.format.format_name,
-      codec_name:           ffprobe_result.streams[0].codec_name
+      codec_name:           ffprobe_result.streams[0].codec_name,
+      sizeInBytes:          parseInt(ffprobe_result.format.size)
     }
     
     if (ffprobe_result.streams[0].bits_per_sample === 0) meta.bit_depth = null
