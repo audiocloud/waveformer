@@ -21,15 +21,15 @@ if (process.env.MONGO_CONNECTION_STRING === undefined) throw Error('MongoDB conn
 const agenda = new Agenda({ db: { address: process.env.MONGO_CONNECTION_STRING } });
 
 agenda.on('start', (job) => {
-  console.log(`Starting job:`, job)
+  console.log(`Starting job '${job.attrs.name}' with id: ${job.attrs.data.job_id}`)
 })
 
 agenda.on('complete', (job) => {
-  console.log(`Completed job:`, job)
+  console.log(`Completed job '${job.attrs.name}' with id: ${job.attrs.data.job_id}`)
 })
 
 agenda.on('fail', (job) => {
-  console.log(`Failed job:`, job)
+  console.log(`Failed job '${job.attrs.name}' with id: ${job.attrs.data.job_id}`)
 })
 
 agenda.on('error', (error) => {
@@ -37,7 +37,7 @@ agenda.on('error', (error) => {
 })
 
 agenda.define("waveform", async (job) => {
-  console.log('----------');
+  console.log('--------------------------------------------');
   console.log("Waveforming:");
   console.log({ ...job.attrs.data, id: job.attrs.data.job_id });
 
@@ -60,8 +60,7 @@ agenda.define("waveform", async (job) => {
       await temporaryFileTask(
         async (output_loc) => {
           await download(input_url, input_loc);
-          
-          console.log('----- download finished -----')
+          console.log('------------ Download finished ------------')
           const {
             sample_rate,
             channels,
@@ -82,7 +81,7 @@ agenda.define("waveform", async (job) => {
           meta.format_name = format_name;
           meta.codec_name = codec_name;
 
-          console.log('----- meta set -----')
+          console.log('---------------- Meta set -----------------')
 
           await generate_peaks(
             input_loc,
@@ -112,7 +111,7 @@ agenda.define("waveform", async (job) => {
 })();
 
 async function upload(path, url) {
-  console.log('----------');
+  console.log('--------------------------------------------');
   console.log("Uploading:");
   console.log({ path, url });
   await axios({
@@ -124,7 +123,7 @@ async function upload(path, url) {
 }
 
 async function download(url, path) {
-  console.log('----------');
+  console.log('--------------------------------------------');
   console.log("Downloading:");
   console.log({ url, path });
 
@@ -156,7 +155,7 @@ function generate_peaks(
   bit_depth,
   output_loc
 ) {
-  console.log('----------');
+  console.log('--------------------------------------------');
   console.log("Generating peaks:");
   console.table({
     input_loc,
@@ -199,15 +198,15 @@ function generate_peaks(
 }
 
 async function get_metadata (input_loc) {
-  console.log('----------');
+  console.log('--------------------------------------------');
   console.log("Getting file metadata...");
 
   const promisifyExec = promisify(exec)
 
   const { stdout, stderr } = await promisifyExec(`ffprobe -print_format json -show_format -show_streams -select_streams a -i ${input_loc}`);
   
-  console.log('--------------------------------------------')
   const ffprobe_result = JSON.parse(stdout)
+  console.log('--------------------------------------------')
   console.log('ffprobe_result:', ffprobe_result)
   console.log('--------------------------------------------')
 
@@ -238,7 +237,7 @@ async function get_metadata (input_loc) {
     if (!allowedFormatNames.find(element => element === meta.format_name)) throw Error(`Bad format: ${meta.format_name}`)
     if (!allowedCodecNames.find(element => element === meta.codec_name)) throw Error(`Bad codec: ${meta.codec_name}`)
 
-    console.log('----------');
+    console.log('--------------------------------------------');
     console.log('Meta:', meta)
 
     return meta
@@ -246,7 +245,7 @@ async function get_metadata (input_loc) {
 }
 
 async function notify(url, id, context, meta, err) {
-  console.log('----------');
+  console.log('--------------------------------------------');
   console.log("Notifying:");
   console.log({ url, id, context, err });
 
