@@ -19,7 +19,7 @@
   "homepage": "https://github.com/audiocloud/waveformer#readme",
   "dependencies": {
     "agenda": "^4.3.0",
-    "axios": "^0.27",
+    "axios": "^0.27.2",
     "body-parser": "^1",
     "cors": "^2",
     "express": "^4",
