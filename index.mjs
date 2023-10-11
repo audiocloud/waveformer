@@ -21,15 +21,15 @@ if (process.env.MONGO_CONNECTION_STRING === undefined) throw Error('MongoDB conn
 const agenda = new Agenda({ db: { address: process.env.MONGO_CONNECTION_STRING } });
 
 agenda.on('start', (job) => {
-  console.log(`Starting job ${job.attrs.name} id: ${job.attrs.data.job_id}`)
+  console.log(`Starting job:`, job)
 })
 
 agenda.on('complete', (job) => {
-  console.log(`Completed job ${job.attrs.name} id: ${job.attrs.data.job_id}`)
+  console.log(`Completed job:`, job)
 })
 
 agenda.on('fail', (job) => {
-  console.log(`Failed job ${job.attrs.name} id: ${job.attrs.data.job_id}`)
+  console.log(`Failed job:`, job)
 })
 
 agenda.on('error', (error) => {
@@ -37,7 +37,8 @@ agenda.on('error', (error) => {
 })
 
 agenda.define("waveform", async (job) => {
-  console.log("Waveforming...");
+  console.log('----------');
+  console.log("Waveforming:");
   console.log({ ...job.attrs.data, id: job.attrs.data.job_id });
 
   const {
@@ -111,7 +112,8 @@ agenda.define("waveform", async (job) => {
 })();
 
 async function upload(path, url) {
-  console.log("uploading");
+  console.log('----------');
+  console.log("Uploading:");
   console.log({ path, url });
   await axios({
     url,
@@ -122,7 +124,8 @@ async function upload(path, url) {
 }
 
 async function download(url, path) {
-  console.log("downloading");
+  console.log('----------');
+  console.log("Downloading:");
   console.log({ url, path });
 
   const source = await axios.get(url, { responseType: "stream" });
@@ -153,7 +156,8 @@ function generate_peaks(
   bit_depth,
   output_loc
 ) {
-  console.log("generating peaks");
+  console.log('----------');
+  console.log("Generating peaks:");
   console.table({
     input_loc,
     input_format,
@@ -195,7 +199,8 @@ function generate_peaks(
 }
 
 async function get_metadata (input_loc) {
-  console.log("getting file metadata");
+  console.log('----------');
+  console.log("Getting file metadata...");
 
   const promisifyExec = promisify(exec)
 
@@ -203,8 +208,8 @@ async function get_metadata (input_loc) {
   
   console.log('--------------------------------------------')
   const ffprobe_result = JSON.parse(stdout)
-  // console.log('ffprobe_result:', ffprobe_result)
-  // console.log('--------------------------------------------')
+  console.log('ffprobe_result:', ffprobe_result)
+  console.log('--------------------------------------------')
 
   if (ffprobe_result.streams.length < 1) {
     throw Error('No audio streams found.')
@@ -233,14 +238,16 @@ async function get_metadata (input_loc) {
     if (!allowedFormatNames.find(element => element === meta.format_name)) throw Error(`Bad format: ${meta.format_name}`)
     if (!allowedCodecNames.find(element => element === meta.codec_name)) throw Error(`Bad codec: ${meta.codec_name}`)
 
-    console.log('meta:', meta)
+    console.log('----------');
+    console.log('Meta:', meta)
 
     return meta
   }
 }
 
 async function notify(url, id, context, meta, err) {
-  console.log("notifying");
+  console.log('----------');
+  console.log("Notifying:");
   console.log({ url, id, context, err });
 
   await axios.post(url, {
