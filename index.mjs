@@ -116,12 +116,13 @@ async function upload(path, url) {
   console.log('--------------------------------------------');
   console.log("Uploading:");
   console.log({ path, url });
-  await axios({
+  const response = await axios({
     url,
     method: "put",
     data: fs.createReadStream(path),
     headers: { "content-type": "application/octet-stream" },
   });
+  console.log('Axios response:', response)
 }
 
 async function download(url, path) {
