@@ -28,8 +28,9 @@ agenda.on('complete', (job) => {
   console.log(`Completed job '${job.attrs.name}' with id: ${job.attrs.data.job_id}`)
 })
 
-agenda.on('fail', (job) => {
+agenda.on('fail', (err, job) => {
   console.log(`Failed job '${job.attrs.name}' with id: ${job.attrs.data.job_id}`)
+  console.log('Error:', err)
 })
 
 agenda.on('error', (error) => {
