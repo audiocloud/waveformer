@@ -1,7 +1,7 @@
 import { Job } from '@hokify/agenda'
 import { Logger } from './utils/logger'
 import { handleInputValidation } from './utils/handleInputValidation'
-import { AudioFileMeta, JobDataValidationSchema } from './types'
+import { JobDataValidationSchema } from './types'
 import { temporaryFileTask } from 'tempy'
 import { download } from './helpers/download'
 import { get_metadata } from './helpers/get_metadata'

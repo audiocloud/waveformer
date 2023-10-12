@@ -1,5 +1,5 @@
 import { Agenda } from '@hokify/agenda'
-import { nanoid } from 'nanoid'
+import { v4 as uuid_v4 } from 'uuid'
 import body_parser from 'body-parser'
 import cors from 'cors'
 import Express from 'express'
@@ -56,7 +56,7 @@ app.post('/v1/create', (req, res, next) => {
 
   const timestamp = new Date().toISOString()
   const parameters = handleInputValidation(BodyValidationSchema, req.body)
-  const data = { job_id: nanoid(), ...parameters }
+  const data = { job_id: uuid_v4(), ...parameters }
 
   agenda
     .schedule(timestamp, 'waveform', data)
