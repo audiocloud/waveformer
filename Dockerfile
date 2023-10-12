@@ -14,4 +14,4 @@ RUN npm i
 
 COPY . .
 
-CMD [ "node", "index.mjs" ]
+CMD [ "node", "dist/index.js" ]
