@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { serializeError } from 'serialize-error'
 import { AudioFileMeta } from '../types'
 import { Logger } from '../utils/logger'
 import { getErrorMessage } from '../utils/getErrorMessage'
@@ -10,9 +9,16 @@ export const notify = async (notifyUrl: string, id: string, context: any, meta: 
   try {
     
     logger.info('Notifying:', { notifyUrl, id, context, meta, err })
+
+    const dynamicImportSerializeError = (err: any) => {
+      import('serialize-error')
+        .then(async ({ serializeError }) => {
+          serializeError(err)
+        })
+    }
   
     const data = {
-      err: err ? serializeError(err) : null, // not in use and always null atm
+      err: err ? dynamicImportSerializeError(err) : null, // not in use and always null atm
       context,
       meta,
       id,

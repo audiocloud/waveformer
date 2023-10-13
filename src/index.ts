@@ -4,11 +4,11 @@ import body_parser from 'body-parser'
 import cors from 'cors'
 import Express from 'express'
 import process from 'process'
-import { Logger } from './utils/logger.js'
-import { handleInputValidation } from './utils/handleInputValidation.js'
-import { BodyValidationSchema } from './types'
-import { waveform_job_processor } from './waveform_job_processor.js'
-import { getErrorMessage } from './utils/getErrorMessage.js'
+import { Logger } from './utils/logger'
+import { handleInputValidation } from './utils/handleInputValidation'
+import { BodyValidationSchema } from './types/index'
+import { waveform_job_processor } from './waveform_job_processor'
+import { getErrorMessage } from './utils/getErrorMessage'
 
 const logger = new Logger('waveformer')
 

@@ -2,7 +2,6 @@ import { Job } from '@hokify/agenda'
 import { Logger } from './utils/logger'
 import { handleInputValidation } from './utils/handleInputValidation'
 import { JobDataValidationSchema } from './types'
-import { temporaryFileTask } from 'tempy'
 import { download } from './helpers/download'
 import { get_metadata } from './helpers/get_metadata'
 import { generate_peaks } from './helpers/generate_peaks'
@@ -13,7 +12,7 @@ const logger = new Logger('waveformer/waveform_job_processor')
 
 export const waveform_job_processor = async (job: Job<any>) => {
   
-  logger.info('Job data:', { ...job.attrs.data, id: job.attrs.data.job_id })
+  logger.info('Job data:', { ...job.attrs.data, job_id: job.attrs.data.job_id })
 
   const {
     job_id,
@@ -27,7 +26,7 @@ export const waveform_job_processor = async (job: Job<any>) => {
     context,
   } = handleInputValidation(JobDataValidationSchema, job.attrs.data)
 
-  await temporaryFileTask(
+  import('tempy').then(async ({ temporaryFileTask }) => { await temporaryFileTask(
     async (input_loc) => {
       await temporaryFileTask(
         async (output_loc) => {
@@ -50,5 +49,5 @@ export const waveform_job_processor = async (job: Job<any>) => {
       )
     },
     { extension: input_format }
-  )
+  )})
 }
