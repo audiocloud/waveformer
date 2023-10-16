@@ -19,17 +19,14 @@ if (process.env.MONGO_CONNECTION_STRING === undefined) throw Error('MongoDB conn
 const agenda = new Agenda({ db: { address: process.env.MONGO_CONNECTION_STRING } })
 
 agenda.on('start', (job) => {
-  logger.info('Job attrs:', job)
   logger.info(`Starting job '${job.attrs.name}' with id: ${(job.attrs.data as any).job_id}`)
 })
 
 agenda.on('complete', (job) => {
-  logger.info('Job attrs:', job)
   logger.info(`Completed job '${job.attrs.name}' with id: ${(job.attrs.data as any).job_id}`)
 })
 
 agenda.on('fail', (error, job) => {
-  logger.warn('Job attrs:', job)
   logger.warn('Error:', error.name)
   logger.warn('Message:', error.message)
   logger.warn(`Failed job '${job.attrs.name}' with id: ${(job.attrs.data as any).job_id}`)
