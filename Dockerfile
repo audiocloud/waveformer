@@ -6,6 +6,8 @@ RUN apk add --no-cache libstdc++ ffmpeg
 
 COPY --from=builder /usr/local/bin/audiowaveform /usr/local/bin/audiowaveform
 
+EXPOSE 3000
+
 WORKDIR /app
 
 COPY package*.json /app/

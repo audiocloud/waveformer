@@ -20,6 +20,10 @@ export const getErrorMessage = (error: any): string => {
     return error
   }
 
+  if (typeof error === 'object') {
+    if ('message' in error) return error.message
+  }
+
   return 'Unknown error type. No message found in the Error object. getErrorMessage function probably needs an update.'
 }
 
