@@ -3,6 +3,9 @@
   "version": "1.0.2",
   "description": "Waveform generator and uploader",
   "main": "dist/index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "node dist/index.js",
     "build": "tsc",
