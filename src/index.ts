@@ -1,14 +1,15 @@
+import 'dotenv/config'
 import { Agenda } from '@hokify/agenda'
 import { v4 as uuid_v4 } from 'uuid'
 import body_parser from 'body-parser'
 import cors from 'cors'
 import Express from 'express'
 import process from 'process'
-import { Logger } from './utils/logger'
-import { handleInputValidation } from './utils/handleInputValidation'
-import { BodyValidationSchema } from './types/index'
-import { waveform_job_processor } from './waveform_job_processor'
-import { getErrorMessage } from './utils/getErrorMessage'
+import { Logger } from './utils/logger.js'
+import { handleInputValidation } from './utils/handleInputValidation.js'
+import { BodyValidationSchema } from './types/index.js'
+import { waveform_job_processor } from './waveform_job_processor.js'
+import { getErrorMessage } from './utils/getErrorMessage.js'
 
 const logger = new Logger('waveformer')
 
@@ -44,7 +45,6 @@ agenda.define('waveform', waveform_job_processor); // The ';' is needed for the 
   // IIFE to give access to async/await
   await agenda.start()
 })()
-
 
 app.use(body_parser.json())
 app.use(cors())

@@ -16,7 +16,9 @@ export const getErrorMessage = (error: any): string => {
     return `AWS Error: ${error.name}`
   }
 
-  if ('message' in error) return error.message
+  if (typeof error === 'string') {
+    return error
+  }
 
   return 'Unknown error type. No message found in the Error object. getErrorMessage function probably needs an update.'
 }

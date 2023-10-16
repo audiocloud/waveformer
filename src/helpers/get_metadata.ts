@@ -1,9 +1,9 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { AudioFileMeta, FfprobeParseValidationSchema } from '../types'
-import { Logger } from '../utils/logger'
-import { handleInputValidation } from '../utils/handleInputValidation'
-import { getErrorMessage } from '../utils/getErrorMessage'
+import { AudioFileMeta, FfprobeParseValidationSchema } from '../types/index.js'
+import { Logger } from '../utils/logger.js'
+import { handleInputValidation } from '../utils/handleInputValidation.js'
+import { getErrorMessage } from '../utils/getErrorMessage.js'
 
 const logger = new Logger('waveformer/get_metadata')
 

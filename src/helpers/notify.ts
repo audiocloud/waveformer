@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { AudioFileMeta } from '../types'
-import { Logger } from '../utils/logger'
-import { getErrorMessage } from '../utils/getErrorMessage'
+import { AudioFileMeta } from '../types/index.js'
+import { Logger } from '../utils/logger.js'
+import { getErrorMessage } from '../utils/getErrorMessage.js'
 
 const logger = new Logger('waveformer/notify')
 

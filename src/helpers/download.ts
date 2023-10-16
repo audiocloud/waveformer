@@ -1,7 +1,7 @@
 import axios from 'axios'
 import fs from 'fs'
-import { Logger } from '../utils/logger'
-import { getErrorMessage } from '../utils/getErrorMessage'
+import { Logger } from '../utils/logger.js'
+import { getErrorMessage } from '../utils/getErrorMessage.js'
 
 const logger = new Logger('waveformer/download')
 

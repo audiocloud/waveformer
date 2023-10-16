@@ -1,7 +1,7 @@
 import child from 'child_process'
-import { TBitDepthWithNull, TChannelMode, TInputFormat, TOutputFormat } from '../types'
-import { Logger } from '../utils/logger'
-import { getErrorMessage } from '../utils/getErrorMessage'
+import { TBitDepthWithNull, TChannelMode, TInputFormat, TOutputFormat } from '../types/index.js'
+import { Logger } from '../utils/logger.js'
+import { getErrorMessage } from '../utils/getErrorMessage.js'
 
 const logger = new Logger('waveformer/generate_peaks')
 
@@ -32,11 +32,16 @@ export const generate_peaks = async ({ input_loc, input_format, channel_mode, ou
       '-i', input_loc,
       '-o', output_loc
     ]
+
+    const getMaxWaveformBitDepth = () => {
+      if (bit_depth === null || bit_depth > 16) return 16
+      return bit_depth
+    }
   
-    if (bit_depth) args.push(`-b ${bit_depth}`)
+    if (bit_depth) args.push(`-b ${getMaxWaveformBitDepth()}`)
     if (channel_mode === 'multi') args.push('--split-channels')
   
-    logger.info('Running: audiowaveform ' + args)
+    logger.info('Running: audiowaveform ' + args.join(' '))
     const awf = child.spawn('audiowaveform', args)
 
     await new Promise<void>((resolve, reject) => {

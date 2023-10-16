@@ -1,10 +1,10 @@
 import { ZodType, z } from 'zod'
-import { is_url_valid } from '../utils/is_url_valid'
+import { isValidDomain } from '../utils/isValidDomain.js'
 
 const ALLOWED_INPUT_FORMATS = ['flac', 'wav', 'mp3'] as const
 const ALLOWED_OUTPUT_FORMATS = ['dat', 'json'] as const
 const ALLOWED_CHANNEL_MODES = ['single', 'multi'] as const
-const ALLOWED_BIT_DEPTHS = [8, 16] as const
+const ALLOWED_BIT_DEPTHS = [8, 16, 24, 32] as const
 const ALLOWED_CHANNELS = [1, 2] as const
 const ALLOWED_FORMAT_NAMES = ALLOWED_INPUT_FORMATS // this is for ffprobe output validation
 const ALLOWED_CODEC_NAMES = ['flac', 'pcm_s16le', 'pcm_s16be', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'mp3'] as const
@@ -36,7 +36,8 @@ const InputFormatSchema = z.enum(ALLOWED_INPUT_FORMATS)
 const OutputFormatSchema = z.enum(ALLOWED_OUTPUT_FORMATS)
 const ChannelModeSchema = z.enum(ALLOWED_CHANNEL_MODES)
 const BitDepthSchema = numericEnum(ALLOWED_BIT_DEPTHS)
-const URLSchema = z.string().url().refine(url => is_url_valid(url), { message: 'Invalid domain.' })
+const URLSchema = z.string().url()
+  .refine(url => isValidDomain(url), { message: 'Invalid domain' })
 
 export const BodyValidationSchema = z.object({
   input_url: URLSchema,
