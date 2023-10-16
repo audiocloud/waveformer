@@ -26,7 +26,7 @@ export const waveform_job_processor = async (job: Job<any>) => {
     context,
   } = handleInputValidation(JobDataValidationSchema, job.attrs.data)
 
-  import('tempy').then(async ({ temporaryFileTask }) => { await temporaryFileTask(
+  await import('tempy').then(async ({ temporaryFileTask }) => { await temporaryFileTask(
     async (input_loc) => {
       await temporaryFileTask(
         async (output_loc) => {
