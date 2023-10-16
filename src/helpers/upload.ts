@@ -10,6 +10,8 @@ export async function upload(sourcePath: string, destinationUrl: string) {
 
     logger.info('Uploading:', { sourcePath, destinationUrl })
 
+    if (!fs.existsSync(sourcePath)) throw Error(`File does not exist at ${sourcePath}`)
+
     const { status, statusText, data } = await axios.put(destinationUrl, fs.createReadStream(sourcePath), { headers: { 'content-type': 'application/octet-stream' }})
     logger.info('Status:', status)
     if (status !== 200) throw Error(statusText)
