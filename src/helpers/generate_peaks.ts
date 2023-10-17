@@ -43,12 +43,15 @@ export const generate_peaks = async ({ input_loc, input_format, channel_mode, ou
       })
 
       awf.on('exit', (code, signal) => {
-        if (code === 0) resolve(true)
+        if (code === 0) {
+          logger.info('Waveform generated.')
+          resolve(true)
+        }
         else reject(typeof code === 'number' ? `Code: ${code}` : `Code: null, Signal: ${signal}`)
       })
 
     })
-
+    
     return {
       success: true,
       message: 'Waveform generated.'
