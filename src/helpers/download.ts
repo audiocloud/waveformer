@@ -27,7 +27,10 @@ export const download = async (sourceUrl: string, destinationPath: string) => {
         reject(err)
       })
       writer.on('finish', () => {
-        if (!error) resolve(true)
+        if (!error) {
+          writer.close()
+          resolve(true)
+        }
       })
     })
 

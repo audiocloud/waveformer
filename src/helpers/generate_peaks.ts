@@ -25,24 +25,16 @@ export const generate_peaks = async ({ input_loc, input_format, channel_mode, ou
       '-i',
       input_loc,
       '-o',
-      output_loc
+      output_loc,
+      '-b',
+      '8'
     ]
-
-    const getMaxWaveformBitDepth = () => {
-      if (bit_depth === null || bit_depth > 16) return 16
-      return bit_depth
-    }
-
-    if (bit_depth) {
-      args.push('-b')
-      args.push(`${getMaxWaveformBitDepth()}`)
-    }
 
     if (channel_mode === 'multi') args.push('--split-channels')
 
     logger.info('Generating: audiowaveform ' + args.join(' '))
 
-    const awf = child.spawn('audiowaveform', args)
+    const awf = child.spawn('audiowaveform', args, { stdio: 'inherit' })
 
     await new Promise((resolve, reject) => {
       
