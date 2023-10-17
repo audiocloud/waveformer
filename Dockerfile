@@ -16,6 +16,7 @@ EXPOSE 3000
 CMD ["/usr/bin/npm", "run", "dev"]
 
 FROM builder as prod
+COPY package*.json /app/
 RUN [ "/usr/bin/npm", "i" ]
 COPY . .
 RUN [ "/usr/bin/npm", "run", "build" ]
