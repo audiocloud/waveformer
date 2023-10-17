@@ -17,14 +17,6 @@ type Props = {
 export const generate_peaks = ({ input_loc, input_format, channel_mode, output_format, bit_depth, output_loc }: Props): Promise<{ success: boolean, message: string }> => {
   return new Promise(async (resolve, reject) => {
     try {
-      logger.info('Generating peaks:', {
-        input_loc,
-        input_format,
-        channel_mode,
-        output_format,
-        bit_depth,
-        output_loc
-      })
 
       const args = [
         '--input-format',
@@ -52,13 +44,9 @@ export const generate_peaks = ({ input_loc, input_format, channel_mode, output_f
       logger.info('Running: audiowaveform ' + args.join(' '))
       const awf = child.spawn('audiowaveform', args)
 
-      awf.stdout.on('data', (data) => {
-        logger.info('stdout data:', data)
-      })
-
       awf.on('exit', (code, signal) => {
-        logger.error('AWF code:', code)
-        logger.error('Signal:', signal)
+        logger.info('AWF code:', typeof code === 'number' ? code : 'null')
+        logger.info('Signal:', signal)
         if (code === 0) {
           resolve({
             success: true,

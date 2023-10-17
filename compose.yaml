@@ -1,0 +1,13 @@
+services:
+  waveformer:
+    build:
+      context: .
+      target: dev
+    volumes: 
+     # left (host) overwrites the static contents of the right (container) directory
+     - ./:/app
+     # prevents the overwriting of the node modules in the container
+     - /app/node_modules
+    ports:
+      - 3000:3000
+  
