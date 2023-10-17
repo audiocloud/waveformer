@@ -16,12 +16,6 @@ EXPOSE 3000
 CMD ["/usr/bin/npm", "run", "dev"]
 
 FROM builder as prod
-ENV NODE_ENV production
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
-COPY package*.json /app/
 RUN [ "/usr/bin/npm", "i" ]
 COPY . .
 RUN [ "/usr/bin/npm", "run", "build" ]
