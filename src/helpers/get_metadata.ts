@@ -47,6 +47,7 @@ export const get_metadata = async (input_loc: string): Promise<{ success: true, 
       success: true,
       meta
     }
+    
   } catch (error) {
     const message = getErrorMessage(error)
     logger.error(message)

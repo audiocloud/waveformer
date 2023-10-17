@@ -28,9 +28,8 @@ agenda.on('complete', (job) => {
 })
 
 agenda.on('fail', (error, job) => {
-  logger.warn('Error:', error.name)
-  logger.warn('Message:', error.message)
-  logger.warn(`Failed job '${job.attrs.name}' with id: ${(job.attrs.data as any).job_id}`)
+  logger.error('Error:', error.message)
+  logger.error(`Failed job '${job.attrs.name}' with id: ${(job.attrs.data as any).job_id}`)
 })
 
 agenda.on('error', (error) => {

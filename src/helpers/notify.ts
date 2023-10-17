@@ -5,7 +5,7 @@ import { getErrorMessage } from '../utils/getErrorMessage.js'
 
 const logger = new Logger('waveformer/notify')
 
-export const notify = async (notifyUrl: string, id: string, context: any, meta: AudioFileMeta, err: any) =>  {
+export const notify = async (notifyUrl: string, id: string, context: any, meta: AudioFileMeta, err: any) => {
   try {
     
     logger.info('Notifying:', { notifyUrl, id, context, meta, err })
@@ -21,7 +21,7 @@ export const notify = async (notifyUrl: string, id: string, context: any, meta: 
       err: err ? dynamicImportSerializeError(err) : null, // not in use and always null atm
       context,
       meta,
-      id,
+      id
     }
     const { status, statusText } = await axios.post(notifyUrl, data)
     logger.info('Status:', status)

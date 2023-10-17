@@ -26,29 +26,33 @@ export const waveform_job_processor = async (job: Job<any>) => {
     context,
   } = handleInputValidation(JobDataValidationSchema, job.attrs.data)
 
-  await import('tempy').then(async ({ temporaryFileTask }) => { await temporaryFileTask(
-    async (input_loc) => {
-      await temporaryFileTask(
-        async (output_loc) => {
+  await import('tempy').then(async ({ temporaryFileTask }) => {
 
-          const download_response = await download(input_url, input_loc)
-          if (!download_response.success) throw Error(download_response.message)
+    await temporaryFileTask(
+      async (input_loc) => {
+        await temporaryFileTask(
+          async (output_loc) => {
 
-          const ffprobe_meta = await get_metadata(input_loc)
-          if (!ffprobe_meta.success) throw Error(ffprobe_meta.message)
+            const download_response = await download(input_url, input_loc)
+            if (!download_response.success) throw Error(download_response.message)
 
-          const awf_response = await generate_peaks({ input_loc, input_format, channel_mode, output_format, bit_depth: ffprobe_meta.meta.bit_depth, output_loc })
-          if (!awf_response.success) throw Error(`AWF error: ${awf_response.message}`)
+            const ffprobe_meta = await get_metadata(input_loc)
+            if (!ffprobe_meta.success) throw Error(ffprobe_meta.message)
 
-          const upload_response = await upload(output_loc, output_url)
-          if (!upload_response.success) throw Error(`Upload error: ${upload_response.message}`)
+            const awf_response = await generate_peaks({ input_loc, input_format, channel_mode, output_format, bit_depth: ffprobe_meta.meta.bit_depth, output_loc })
+            if (!awf_response.success) throw Error(`AWF error: ${awf_response.message}`)
 
-          await notify(notify_url, job_id, context, ffprobe_meta.meta, null)
+            const upload_response = await upload(output_loc, output_url)
+            if (!upload_response.success) throw Error(`Upload error: ${upload_response.message}`)
 
-        },
-        { extension: output_format }
-      )
-    },
-    { extension: input_format }
-  )})
+            await notify(notify_url, job_id, context, ffprobe_meta.meta, null)
+
+          },
+          { extension: output_format }
+        )
+      },
+      { extension: input_format }
+    )
+    
+  })
 }
